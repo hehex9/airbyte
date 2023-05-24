@@ -6,11 +6,13 @@ package io.airbyte.integrations.destination_async.state;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import io.airbyte.commons.json.Jsons;
+import io.airbyte.integrations.destination_async.GlobalMemoryManager;
 import io.airbyte.integrations.destination_async.buffers.BufferManager;
 import io.airbyte.integrations.destination_async.buffers.StreamAwareQueue;
 import io.airbyte.protocol.models.v0.AirbyteMessage;
@@ -25,10 +27,12 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.commons.lang.RandomStringUtils;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class AsyncStateManagerTest {
 
+  private static final long STATE_MSG_SIZE = 1000;
   private static final String STREAM_NAME = "id_and_name";
   private static final String STREAM_NAME2 = STREAM_NAME + 2;
   private static final StreamDescriptor STREAM1_DESC = new StreamDescriptor()
@@ -50,27 +54,33 @@ class AsyncStateManagerTest {
       .withState(new AirbyteStateMessage()
           .withType(AirbyteStateType.STREAM)
           .withStream(new AirbyteStreamState().withStreamDescriptor(STREAM1_DESC).withStreamState(Jsons.jsonNode(2))));
+  private GlobalMemoryManager memoryManager;
+
+  @BeforeEach
+  void setup() {
+    memoryManager = mock(GlobalMemoryManager.class);
+  }
 
   @Test
   void testEmptyQueuesGlobalState() {
-    final AsyncStateManager stateManager = new AsyncStateManager();
+    final AsyncStateManager stateManager = new AsyncStateManager(memoryManager);
 
     // GLOBAL
-    stateManager.trackState(GLOBAL_MESSAGE1);
+    stateManager.trackState(GLOBAL_MESSAGE1, STATE_MSG_SIZE);
     assertEquals(List.of(GLOBAL_MESSAGE1), stateManager.flushStates());
 
-    assertThrows(IllegalArgumentException.class, () -> stateManager.trackState(STREAM_STATE_MESSAGE1));
+    assertThrows(IllegalArgumentException.class, () -> stateManager.trackState(STREAM_STATE_MESSAGE1, STATE_MSG_SIZE));
   }
 
   @Test
   void testEmptyQueuesStreamState() {
-    final AsyncStateManager stateManager = new AsyncStateManager();
+    final AsyncStateManager stateManager = new AsyncStateManager(memoryManager);
 
     // GLOBAL
-    stateManager.trackState(STREAM_STATE_MESSAGE1);
+    stateManager.trackState(STREAM_STATE_MESSAGE1, STATE_MSG_SIZE);
     assertEquals(List.of(STREAM_STATE_MESSAGE1), stateManager.flushStates());
 
-    assertThrows(IllegalArgumentException.class, () -> stateManager.trackState(GLOBAL_MESSAGE1));
+    assertThrows(IllegalArgumentException.class, () -> stateManager.trackState(GLOBAL_MESSAGE1, STATE_MSG_SIZE));
   }
 
   @Test
@@ -78,7 +88,7 @@ class AsyncStateManagerTest {
     final ConcurrentMap<StreamDescriptor, StreamAwareQueue> buffers = new ConcurrentHashMap<>();
     buffers.put(STREAM1_DESC, new StreamAwareQueue(BufferManager.TOTAL_QUEUES_MAX_SIZE_LIMIT_BYTES));
     buffers.put(STREAM2_DESC, new StreamAwareQueue(BufferManager.TOTAL_QUEUES_MAX_SIZE_LIMIT_BYTES));
-    final AsyncStateManager stateManager = new AsyncStateManager();
+    final AsyncStateManager stateManager = new AsyncStateManager(memoryManager);
 
     final List<AirbyteMessage> stream1Records = generateRecords(1000, STREAM_NAME);
     long count = 0;
@@ -89,7 +99,7 @@ class AsyncStateManagerTest {
     final List<AirbyteMessage> stream2Records = generateRecords(1000, STREAM_NAME2);
     for (final AirbyteMessage r : stream2Records) {
       if (count % 1120 == 0) {
-        stateManager.trackState(GLOBAL_MESSAGE1);
+        stateManager.trackState(GLOBAL_MESSAGE1, STATE_MSG_SIZE);
       }
       buffers.get(STREAM2_DESC).offer(r, count++, 160);
     }
@@ -111,13 +121,13 @@ class AsyncStateManagerTest {
   void testOutOfOrderFulfills() {
     final ConcurrentMap<StreamDescriptor, StreamAwareQueue> buffers = new ConcurrentHashMap<>();
     buffers.put(STREAM1_DESC, new StreamAwareQueue(BufferManager.TOTAL_QUEUES_MAX_SIZE_LIMIT_BYTES));
-    final AsyncStateManager stateManager = new AsyncStateManager();
+    final AsyncStateManager stateManager = new AsyncStateManager(memoryManager);
 
     final List<AirbyteMessage> stream1Records = generateRecords(1000, STREAM_NAME);
     long count = 0;
     for (final AirbyteMessage r : stream1Records) {
       if (count > 0 && count % 950 == 0) {
-        stateManager.trackState(GLOBAL_MESSAGE1);
+        stateManager.trackState(GLOBAL_MESSAGE1, STATE_MSG_SIZE);
       }
       buffers.get(STREAM1_DESC).offer(r, count++, 160);
     }

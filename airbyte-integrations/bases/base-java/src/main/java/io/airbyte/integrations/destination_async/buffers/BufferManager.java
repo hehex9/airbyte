@@ -29,7 +29,7 @@ public class BufferManager {
   public BufferManager() {
     memoryManager = new GlobalMemoryManager(TOTAL_QUEUES_MAX_SIZE_LIMIT_BYTES);
     buffers = new ConcurrentHashMap<>();
-    final AsyncStateManager stateManager = new AsyncStateManager();
+    final AsyncStateManager stateManager = new AsyncStateManager(memoryManager);
     bufferEnqueue = new BufferEnqueue(memoryManager, buffers, stateManager);
     bufferDequeue = new BufferDequeue(memoryManager, buffers, stateManager);
     debugLoop.scheduleAtFixedRate(this::printQueueInfo, 0, 10, TimeUnit.SECONDS);
