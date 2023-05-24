@@ -47,7 +47,9 @@ public class BufferEnqueue {
     if (message.getType() == Type.RECORD) {
       handleRecord(streamDescriptor, message);
     } else if (message.getType() == Type.STATE) {
-      stateManager.trackState(message);
+      // todo (cgardens) - feed size into this method. depends on
+      // https://github.com/airbytehq/airbyte/pull/26332
+      stateManager.trackState(message, 1000L);
     }
   }
 
