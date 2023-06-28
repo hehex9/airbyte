@@ -391,6 +391,13 @@
           "{sync_id}"
         ],
         "order": 8
+      },
+      "s3_path_style_access_enabled": {
+        "title": "Path style access",
+        "description": "Default: true.",
+        "type": "boolean",
+        "order": 9,
+        "default": true
       }
     }
   }
