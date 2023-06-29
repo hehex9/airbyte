@@ -14,6 +14,7 @@ import static io.airbyte.integrations.destination.s3.constant.S3Constants.S_3_BU
 import static io.airbyte.integrations.destination.s3.constant.S3Constants.S_3_ENDPOINT;
 import static io.airbyte.integrations.destination.s3.constant.S3Constants.S_3_PATH_FORMAT;
 import static io.airbyte.integrations.destination.s3.constant.S3Constants.S_3_PATH_STYLE_ACCESS_ENABLED;
+import static io.airbyte.integrations.destination.s3.constant.S3Constants.S_3_CHECK_INTEGRITY;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
@@ -151,6 +152,10 @@ public class S3DestinationConfig {
       default -> {
         if (config.has(S_3_ENDPOINT)) {
           builder = builder.withEndpoint(config.get(S_3_ENDPOINT).asText());
+        }
+
+        if (config.has(S_3_CHECK_INTEGRITY)) {
+          builder = builder.withCheckIntegrity(config.get(S_3_CHECK_INTEGRITY).asBoolean());
         }
 
         if (config.has(S_3_PATH_STYLE_ACCESS_ENABLED)) {

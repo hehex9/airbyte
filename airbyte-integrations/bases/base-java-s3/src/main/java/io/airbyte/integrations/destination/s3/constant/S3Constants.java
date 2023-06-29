@@ -17,6 +17,7 @@ public final class S3Constants {
   public static final String S_3_BUCKET_NAME = "s3_bucket_name";
   public static final String S_3_BUCKET_REGION = "s3_bucket_region";
   public static final String S_3_PATH_STYLE_ACCESS_ENABLED = "s3_path_style_access_enabled";
+  public static final String S_3_CHECK_INTEGRITY = "s3_check_integrity";
 
   // r2 requires account_id
   public static final String ACCOUNT_ID = "account_id";

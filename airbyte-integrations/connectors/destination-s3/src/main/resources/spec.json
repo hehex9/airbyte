@@ -398,6 +398,13 @@
         "type": "boolean",
         "order": 9,
         "default": true
+      },
+      "s3_check_integrity": {
+        "title": "S3 Check Integrity.",
+        "description": "Default: true.",
+        "type": "boolean",
+        "order": 10,
+        "default": true
       }
     }
   }
